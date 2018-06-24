@@ -27,7 +27,14 @@ wire [6:0] tx = vga_x / 8;
 wire [7:0] curchr = text[(ty*80) + tx];
         
 assign address = (curchr * 16) + vga_y%16;
-assign pixel = char_data[8-vga_x%8];
+//assign pixel = char_data[8-(vga_x%8)];
+
+reg p;
+assign pixel = p;
+always @(posedge clk)
+begin
+    p = char_data[8-(vga_x%8)];
+end
 
 always @(posedge inrdy) text[(txt_y*80) + txt_x] <= inchr;
 

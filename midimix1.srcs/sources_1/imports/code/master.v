@@ -15,18 +15,6 @@ module master(
 
 //
 
-vga vga_impl (
-    .CLK        (clk),
-    .RST_BTN    (btnC),
-    .VGA_HS_O   (Hsync),
-    .VGA_VS_O   (Vsync),
-    .VGA_R      (vgaRed),
-    .VGA_G      (vgaGreen),
-    .VGA_B      (vgaBlue)
-);
-
-//
-
 reg rst = 1;
 reg [3:0] dpis = 4'b1111;
 wire blinky;
@@ -297,4 +285,21 @@ endtask
 
 assign byte = sbyte;
 assign led[15:0] = sbyte[15:0];
+
+//
+
+//wire [15:0] activity = rxdv;
+
+vga vga_impl (
+    .CLK        (clk),
+    .RST_BTN    (btnC),
+    .VGA_HS_O   (Hsync),
+    .VGA_VS_O   (Vsync),
+    .VGA_R      (vgaRed),
+    .VGA_G      (vgaGreen),
+    .VGA_B      (vgaBlue),
+    .Activity   (rxdv),
+    .OUTActivity(txdv)
+);
+
 endmodule

@@ -11,7 +11,9 @@ module vga(
     output wire VGA_VS_O,       // vertical sync output
     output wire [3:0] VGA_R,    // 4-bit VGA red output
     output wire [3:0] VGA_G,    // 4-bit VGA green output
-    output wire [3:0] VGA_B     // 4-bit VGA blue output
+    output wire [3:0] VGA_B,    // 4-bit VGA blue output
+    input [15:0] Activity,
+    input [15:0] OUTActivity
 );
 
 // generate a 25 MHz pixel strobe
@@ -22,6 +24,7 @@ always @(posedge CLK) {pix_stb, cnt} <= cnt + 16'h4000;  // divide by 4: (2^16)/
 wire [9:0] x;  // current pixel x position: 10-bit value: 0-1023
 wire [8:0] y;  // current pixel y position:  9-bit value: 0-511
 wire active;
+wire animate;
 
 vga640x480 display (
     .i_clk(CLK),
@@ -29,7 +32,8 @@ vga640x480 display (
     .i_rst(RST_BTN),
     .o_hs(VGA_HS_O), 
     .o_vs(VGA_VS_O),
-    .o_active(active), 
+    .o_active(active),
+    .o_animate(animate),
     .o_x(x), 
     .o_y(y)
 );
@@ -60,15 +64,56 @@ vgatext vgatext_inst (
 );
 
 integer i;
-reg [6*8-1:0] str;
+reg [22*8-1:0] str;
 initial begin
     for (i=0; i<80*30; i=i+1) text[i] = 0;
-    str = "Login:";
-    for (i=0; i<6; i=i+1) text[29*80+i] = str[(5-i)*8+:8];
+    str = "TomarOS 0.1";
+    for (i=0; i<11; i=i+1) text[1*80+i] = str[(10-i)*8+:8];
+    str = "38911 Basic Bytes Free";
+    for (i=0; i<22; i=i+1) text[3*80+i] = str[(21-i)*8+:8];
+    str = "Ready.";
+    for (i=0; i<6; i=i+1) text[5*80+i] = str[(5-i)*8+:8];
 end
 
-assign VGA_R[3:0] = active ? {4{pixel}} : 0;
-assign VGA_G[3:0] = active ? {4{pixel}} : 0;
-assign VGA_B[3:0] = active ? {4{pixel}} : 0;
+//
+
+reg [6:0] cursor_x = 0;
+reg [4:0] cursor_y = 6;
+wire cursor = (x >= cursor_x * 8) && (x <= (cursor_x + 1) * 8) && (y >= cursor_y * 16) && (y <= (cursor_y + 1) * 16);
+
+//
+
+reg [3:0] act [0:15];
+reg [3:0] oact [0:15];
+reg [1:0] cntr = 0;
+always @(posedge CLK)
+begin
+    for (i=0;i<16;i=i+1) begin
+        if (Activity[i]) act[i] <= 4'b1111;
+        if (OUTActivity[i]) oact[i] <= 4'b1111;
+    end
+
+    if (animate)
+    begin
+        cntr <= cntr + 1;
+        if (cntr == 0) begin 
+            for (i=0;i<16;i=i+1)
+            begin
+                 act[i] <= (act[i] > 0) ? act[i] - 1 : 0;
+                 oact[i] <= (oact[i] > 0) ? oact[i] - 1 : 0;
+            end
+         end
+    end
+end
+
+wire [3:0] xact = x / (640/16);
+wire [3:0] activity = (y>400+act[xact] && y<440-act[xact]) ? act[xact] : 0;
+wire [3:0] oactivity = (y>440+act[xact] && y<480-act[xact]) ? oact[xact] : 0;
+
+//
+
+assign VGA_R[3:0] = active ? {4{pixel^cursor}} | oactivity : 0;
+assign VGA_G[3:0] = active ? {4{pixel^cursor}} | activity : 0;
+assign VGA_B[3:0] = active ? {4{pixel^cursor}} : 0;
 
 endmodule
