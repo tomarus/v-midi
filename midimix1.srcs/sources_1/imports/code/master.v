@@ -8,7 +8,21 @@ module master(
     output [3:0]an,
     output dp,
     output [15:0]led,
-    output [1:0]JB
+    output [1:0]JB,
+    output [3:0] vgaRed, vgaGreen, vgaBlue,
+    output Hsync, Vsync
+);
+
+//
+
+vga vga_impl (
+    .CLK        (clk),
+    .RST_BTN    (btnC),
+    .VGA_HS_O   (Hsync),
+    .VGA_VS_O   (Vsync),
+    .VGA_R      (vgaRed),
+    .VGA_G      (vgaGreen),
+    .VGA_B      (vgaBlue)
 );
 
 //
@@ -56,7 +70,6 @@ reg [4:0] chcnt = 0;
 reg [3:0] msgcnt = 0;
 
 reg sysex_running = 0;
-reg [4:0] sysex_runpos = 0;
 reg [16*8-1:0] sxdata = 0; // 16 * 8 bits of sysex command max
 reg [4:0] sxpos = 0;
 
@@ -121,7 +134,6 @@ begin
                 sendbyte(port, byte);
                 portstate[port*2+:2] <= s_IDLE;
                 sysex_running <= 1;
-                sysex_runpos <= 0;
 
                 reset_counter <= 0;
                 chcnt <= 0;
