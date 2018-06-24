@@ -107,8 +107,10 @@ begin
 end
 
 wire [3:0] xact = x / (640/16);
-wire [3:0] activity = (y>400+act[xact] && y<440-act[xact]) ? act[xact] : 0;
-wire [3:0] oactivity = (y>440+act[xact] && y<480-act[xact]) ? oact[xact] : 0;
+wire [3:0] off = 4'b1111 - act[xact];
+wire xoff = x % (640/16) > off && (640/16) - x % (640/16) > off;
+wire [3:0] activity = (y>400+off && y<440-off) && xoff ? act[xact] : 0;
+wire [3:0] oactivity = (y>440+off && y<480-off) && xoff ? oact[xact] : 0;
 
 //
 
